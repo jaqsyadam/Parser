@@ -1,8 +1,7 @@
 # Product Parsers
 
 This repository contains product parsers for industrial supplier websites.
-The code is organized by site, while root-level scripts remain as compatibility
-entrypoints for simple command-line usage.
+The code is organized by site, and each parser is launched as a Python module.
 
 ## Project Layout
 
@@ -26,26 +25,23 @@ entrypoints for simple command-line usage.
 |       `-- cli.py
 |-- tools/
 |   `-- clean_rs_online_excel.py
-|-- *_parser.py                           # thin compatibility wrappers
-|-- clean_rs_online_excel.py              # thin compatibility wrapper
 |-- requirements.txt
 `-- README.md
 ```
 
 The parser implementations live under `parsers/<site>/`. Each site has a small
-CLI module and a separate core parser module. Root-level scripts only import and
-run the CLI `main()` functions so old commands continue to work.
+CLI module and a separate core parser module.
 
 ## Parsers
 
-| Entrypoint | CLI | Core implementation | Site | Notes |
-| --- | --- | --- | --- | --- |
-| `rs_online_parser.py` | `parsers/rs_online/cli.py` | `parsers/rs_online/rs_online_browser_parser.py` + `browser_runtime.py` | RS Online US | Browser-based parser with category discovery, checkpointing, and resilient page reloads. |
-| `rs_online_http_parser.py` | `parsers/rs_online/http_cli.py` | `parsers/rs_online/rs_online_http_parser.py` | RS Online US | Requests/cloudscraper version for simpler RS pages. Keep the browser parser as the main option. |
-| `export_farnell_parser.py` | `parsers/export_farnell/cli.py` | `parsers/export_farnell/export_farnell_parser.py` | Export Farnell | Browser-based listing parser with category discovery and checkpointing. |
-| `esd_equipment_parser.py` | `parsers/esd_equipment/cli.py` | `parsers/esd_equipment/esd_equipment_parser.py` | ESD Equipment | Category parser with local checkpointing and price filtering. |
-| `radwell_parser.py` | `parsers/radwell/cli.py` | `parsers/radwell/radwell_parser.py` | Radwell UK | Discovers Radwell listing URLs automatically when no URL is passed. |
-| `clean_rs_online_excel.py` | root wrapper | `tools/clean_rs_online_excel.py` | Local Excel utility | Merges RS Online Excel files and separates duplicate or placeholder-image rows. |
+| Command module | Core implementation | Site | Notes |
+| --- | --- | --- | --- |
+| `parsers.rs_online.cli` | `parsers/rs_online/rs_online_browser_parser.py` + `browser_runtime.py` | RS Online US | Browser-based parser with category discovery, checkpointing, and resilient page reloads. |
+| `parsers.rs_online.http_cli` | `parsers/rs_online/rs_online_http_parser.py` | RS Online US | Requests/cloudscraper version for simpler RS pages. Keep the browser parser as the main option. |
+| `parsers.export_farnell.cli` | `parsers/export_farnell/export_farnell_parser.py` | Export Farnell | Browser-based listing parser with category discovery and checkpointing. |
+| `parsers.esd_equipment.cli` | `parsers/esd_equipment/esd_equipment_parser.py` | ESD Equipment | Category parser with local checkpointing and price filtering. |
+| `parsers.radwell.cli` | `parsers/radwell/radwell_parser.py` | Radwell UK | Discovers Radwell listing URLs automatically when no URL is passed. |
+| `tools.clean_rs_online_excel` | `tools/clean_rs_online_excel.py` | Local Excel utility | Merges RS Online Excel files and separates duplicate or placeholder-image rows. |
 
 ## What Is Not Source Code
 
@@ -81,62 +77,38 @@ modules on clean machines.
 RS Online main parser:
 
 ```powershell
-python rs_online_parser.py
-python rs_online_parser.py "https://us.rs-online.com/products/"
-python rs_online_parser.py --max-pages 1 --format print
-python rs_online_parser.py --no-translate
-```
-
-Equivalent module command:
-
-```powershell
+python -m parsers.rs_online.cli
+python -m parsers.rs_online.cli "https://us.rs-online.com/products/"
 python -m parsers.rs_online.cli --max-pages 1 --format print
+python -m parsers.rs_online.cli --no-translate
 ```
 
 Export Farnell:
 
 ```powershell
-python export_farnell_parser.py
-python export_farnell_parser.py "https://export.farnell.com/"
-python export_farnell_parser.py --max-pages 1 --format print
-```
-
-Equivalent module command:
-
-```powershell
+python -m parsers.export_farnell.cli
+python -m parsers.export_farnell.cli "https://export.farnell.com/"
 python -m parsers.export_farnell.cli --max-pages 1 --format print
 ```
 
 ESD Equipment:
 
 ```powershell
-python esd_equipment_parser.py "https://esd.equipment/en/arbeitsplatzsysteme.html"
-python esd_equipment_parser.py "https://esd.equipment/en/arbeitsplatzsysteme.html" --max-pages 1
-```
-
-Equivalent module command:
-
-```powershell
+python -m parsers.esd_equipment.cli "https://esd.equipment/en/arbeitsplatzsysteme.html"
 python -m parsers.esd_equipment.cli "https://esd.equipment/en/arbeitsplatzsysteme.html" --max-pages 1
 ```
 
 Radwell:
 
 ```powershell
-python radwell_parser.py
-python radwell_parser.py "https://www.radwell.co.uk/Brand?Page=1&..."
-```
-
-Equivalent module command:
-
-```powershell
 python -m parsers.radwell.cli
+python -m parsers.radwell.cli "https://www.radwell.co.uk/Brand?Page=1&..."
 ```
 
 Clean/merge RS Online Excel files:
 
 ```powershell
-python clean_rs_online_excel.py --inputs `
+python -m tools.clean_rs_online_excel --inputs `
   "C:\Users\erasy\AppData\Local\RSOnlineParser\rs_online_results_a.xlsx" `
   "C:\Users\erasy\AppData\Local\RSOnlineParser\rs_online_results_b.xlsx" `
   --cleaned "C:\Users\erasy\AppData\Local\RSOnlineParser\rs_online_results_cleaned.xlsx" `
@@ -210,9 +182,8 @@ each parser, keep the responsibilities separated:
 read terminal arguments, choose output paths, and call the parser. The parser modules
 should not know about terminal UX unless there is a very practical reason.
 
-Root entrypoint files should stay thin. Do not put parsing logic into them. Put new
-site-specific code under `parsers/<site>/`, and put local maintenance utilities under
-`tools/`.
+Put new site-specific code under `parsers/<site>/`, and put local maintenance
+utilities under `tools/`.
 
 Avoid placing generated data or one-off URL lists back into source files. Pass URLs
 through CLI arguments or keep temporary lists outside version control.
@@ -223,12 +194,6 @@ Before handing over changes, run:
 
 ```powershell
 python -m py_compile `
-  rs_online_parser.py `
-  rs_online_http_parser.py `
-  export_farnell_parser.py `
-  esd_equipment_parser.py `
-  radwell_parser.py `
-  clean_rs_online_excel.py `
   parsers/rs_online/rs_online_browser_parser.py `
   parsers/rs_online/browser_runtime.py `
   parsers/rs_online/rs_online_http_parser.py `
@@ -246,5 +211,5 @@ python -m py_compile `
 For network behavior, test with a small page limit first:
 
 ```powershell
-python rs_online_parser.py --max-pages 1 --format print
+python -m parsers.rs_online.cli --max-pages 1 --format print
 ```
