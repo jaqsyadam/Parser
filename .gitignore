@@ -1,0 +1,28 @@
+# Runtime caches
+__pycache__/
+*.py[cod]
+
+# Browser profiles created by Playwright/Chrome CDP
+.rs_browser_profile/
+.farnell_browser_profile/
+**/.rs_browser_profile/
+**/.farnell_browser_profile/
+
+# Parser outputs and debug snapshots
+*.xlsx
+*.csv
+*.json
+*_debug_page.html
+*_results*.html
+
+# Local URL/input lists and templates are runtime data, not source code.
+urls.txt
+data_template.xlsx
+
+# Virtual environments and local editor state
+.venv/
+venv/
+env/
+.env
+.idea/
+.vscode/
